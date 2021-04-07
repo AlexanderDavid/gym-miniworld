@@ -461,7 +461,8 @@ class MiniWorldEnv(gym.Env):
         window_width=800,
         window_height=600,
         params=DEFAULT_PARAMS,
-        domain_rand=False
+        domain_rand=False,
+        use_depth=False
     ):
         # Action enumeration for this environment
         self.actions = MiniWorldEnv.Actions
@@ -521,6 +522,9 @@ class MiniWorldEnv(gym.Env):
         # Initialize the state
         self.seed()
         self.reset()
+
+        # Set the observation function
+        self.obs_fn = self.render_obs if not use_depth else self.render_depth
 
     def close(self):
         pass
@@ -586,7 +590,7 @@ class MiniWorldEnv(gym.Env):
         self._render_static()
 
         # Generate the first camera image
-        obs = self.render_obs()
+        obs = self.render_depth()
 
         # Return first observation
         return obs
@@ -702,7 +706,7 @@ class MiniWorldEnv(gym.Env):
             self.agent.carrying.dir = self.agent.dir
 
         # Generate the current camera image
-        obs = self.render_obs()
+        obs = self.render_depth()
 
         # If the maximum time step count is reached
         if self.step_count >= self.max_episode_steps:
@@ -958,7 +962,7 @@ class MiniWorldEnv(gym.Env):
 
         return None
 
-    def near(self, ent0, ent1=None):
+    def near(self, ent0, ent1=None, eps=0.5):
         """
         Test if the two entities are near each other.
         Used for "go to" or "put next" type tasks
@@ -968,7 +972,7 @@ class MiniWorldEnv(gym.Env):
             ent1 = self.agent
 
         dist = np.linalg.norm(ent0.pos - ent1.pos)
-        return dist < ent0.radius + ent1.radius + 1.1 * self.max_forward_step
+        return dist < ent0.radius + ent1.radius + eps
 
     def _load_tex(self, tex_name):
         """
@@ -1337,7 +1341,7 @@ class MiniWorldEnv(gym.Env):
             return img
 
         # Render the agent's view
-        obs = self.render_obs()
+        obs = self.render_depth()
         obs_width = obs.shape[1]
         obs_height = obs.shape[0]
 
@@ -1389,7 +1393,7 @@ class MiniWorldEnv(gym.Env):
         )
 
         # Draw the observation
-        obs = np.ascontiguousarray(np.flip(obs, axis=0))
+        obs = np.ascontiguousarray(np.flip(np.array([[x, x, x] for x in obs]), axis=0))
         obs_data = pyglet.image.ImageData(
             obs_width,
             obs_height,
@@ -1409,8 +1413,16 @@ class MiniWorldEnv(gym.Env):
         self.text_label.text = "pos: (%.2f, %.2f, %.2f)\nangle: %d\nsteps: %d" % (
             *self.agent.pos,
             int(self.agent.dir * 180 / math.pi) % 360,
-            self.step_count
+            self.step_count,
         )
+
+        if self.goal is not None:
+            self.text_label.text += f"\ngoal - pos: {self.goal.pos[0] - self.agent.pos[0]:.2f}, " + \
+                                    f"{self.goal.pos[1] - self.agent.pos[1]:.2f}, " + \
+                                    f"{self.goal.pos[2] - self.agent.pos[2]:.2f}"
+        else:
+            self.text_label.text += "\nrelative_goal_pos: n/a"
+
         self.text_label.draw()
 
         # Force execution of queued commands

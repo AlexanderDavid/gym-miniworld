@@ -364,7 +364,7 @@ class Box(Entity):
     Colored box object
     """
 
-    def __init__(self, color, size=0.8):
+    def __init__(self, color, size=0.8, render=True):
         super().__init__()
 
         if type(size) is int or type(size) is float:
@@ -378,6 +378,8 @@ class Box(Entity):
         self.radius = math.sqrt(sx*sx + sz*sz)/2
         self.height = sy
 
+        self.do_render = render
+
     def randomize(self, params, rng):
         self.color_vec = COLORS[self.color] + params.sample(rng, 'obj_color_bias')
         self.color_vec = np.clip(self.color_vec, 0, 1)
@@ -386,6 +388,9 @@ class Box(Entity):
         """
         Draw the object
         """
+        if not self.do_render:
+            return
+
 
         sx, sy, sz = self.size
 
@@ -438,18 +443,23 @@ class Agent(Entity):
         super().__init__()
 
         # Distance between the camera and the floor
-        self.cam_height = 1.5
+        self.cam_height = 0.30
 
         # Camera up/down angles in degrees
         # Positive angles tilt the camera upwards
         self.cam_pitch = 0
 
+        self.goal = np.array([0,0,0])
+        self.vel = np.array([0,0,0])
+
         # Vertical field of view in degrees
         self.cam_fov_y = 60
 
         # Bounding cylinder size for the agent
-        self.radius = 0.4
-        self.height = 1.6
+        self.radius = 0.354
+        self.height = 0.420
+        self.size = [self.radius, self.height, self.radius]
+        self.color_vec = COLORS["red"]
 
         # Object currently being carried by the agent
         self.carrying = None
@@ -500,29 +510,36 @@ class Agent(Entity):
         # Note: this is currently only used in the top view
         # Eventually, we will want a proper 3D model
 
-        p = self.pos + Y_VEC * self.height
-        dv = self.dir_vec * self.radius
-        rv = self.right_vec * self.radius
+        # p = self.pos + Y_VEC * self.height
+        # dv = self.dir_vec * self.radius
+        # rv = self.right_vec * self.radius
+        #
+        # p0 = p + dv
+        # p1 = p + 0.75 * (rv - dv)
+        # p2 = p + 0.75 * (-rv - dv)
+        #
+        # glColor3f(1, 0, 0)
+        # glBegin(GL_TRIANGLES)
+        # glVertex3f(*p0)
+        # glVertex3f(*p2)
+        # glVertex3f(*p1)
+        # glEnd()
 
-        p0 = p + dv
-        p1 = p + 0.75 * (rv - dv)
-        p2 = p + 0.75 * (-rv - dv)
+        sx, sy, sz = self.size
 
-        glColor3f(1, 0, 0)
-        glBegin(GL_TRIANGLES)
-        glVertex3f(*p0)
-        glVertex3f(*p2)
-        glVertex3f(*p1)
-        glEnd()
+        glDisable(GL_TEXTURE_2D)
+        glColor3f(*self.color_vec)
 
-        """
-        glBegin(GL_LINE_STRIP)
-        for i in range(20):
-            a = (2 * math.pi * i) / 20
-            pc = p + dv * math.cos(a) + rv * math.sin(a)
-            glVertex3f(*pc)
-        glEnd()
-        """
+        glPushMatrix()
+        glTranslatef(*self.pos)
+
+        drawCylinder(
+            self.radius,
+            self.height,
+            30
+        )
+
+        glPopMatrix()
 
     def step(self, delta_time):
         pass

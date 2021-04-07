@@ -385,6 +385,38 @@ def drawAxes(len=0.1):
 
     glEnd()
 
+# https://stackoverflow.com/questions/41912261/pyopengl-creating-a-cylinder-without-using-glucylinder-function
+def drawCylinder(radius, height, num_slices):
+    r = radius
+    h = height
+    n = float(num_slices)
+
+    circle_pts = []
+    for i in range(int(n) + 1):
+        angle = 2 * math.pi * (i/n)
+        x = r * math.cos(angle)
+        z = r * math.sin(angle)
+        pt = (x, z)
+        circle_pts.append(pt)
+
+    glBegin(GL_TRIANGLE_FAN)#drawing the back circle
+    glVertex3f(0, h + 0.1, 0)
+    for (x, z) in circle_pts:
+        glVertex3f(x, h, z)
+    glEnd()
+
+    glBegin(GL_TRIANGLE_FAN)#drawing the front circle
+    glVertex3f(0, 0, 0)
+    for (x, z) in circle_pts:
+        glVertex3f(x, 0, z)
+    glEnd()
+
+    glBegin(GL_TRIANGLE_STRIP)#draw the tube
+    for (x, z) in circle_pts:
+        glVertex3f(x, 0, z)
+        glVertex3f(x, h, z)
+    glEnd()
+
 def drawBox(
     x_min,
     x_max,
