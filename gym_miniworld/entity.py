@@ -502,7 +502,7 @@ class Agent(Entity):
         ])
         #self.radius = params.sample(rng, 'bot_radius')
 
-    def render(self):
+    def render(self, top=False):
         """
         Draw the agent
         """
@@ -510,36 +510,37 @@ class Agent(Entity):
         # Note: this is currently only used in the top view
         # Eventually, we will want a proper 3D model
 
-        # p = self.pos + Y_VEC * self.height
-        # dv = self.dir_vec * self.radius
-        # rv = self.right_vec * self.radius
-        #
-        # p0 = p + dv
-        # p1 = p + 0.75 * (rv - dv)
-        # p2 = p + 0.75 * (-rv - dv)
-        #
-        # glColor3f(1, 0, 0)
-        # glBegin(GL_TRIANGLES)
-        # glVertex3f(*p0)
-        # glVertex3f(*p2)
-        # glVertex3f(*p1)
-        # glEnd()
+        if top:
+            p = self.pos + Y_VEC * self.height
+            dv = self.dir_vec * self.radius
+            rv = self.right_vec * self.radius
 
-        sx, sy, sz = self.size
+            p0 = p + dv
+            p1 = p + 0.75 * (rv - dv)
+            p2 = p + 0.75 * (-rv - dv)
 
-        glDisable(GL_TEXTURE_2D)
-        glColor3f(*self.color_vec)
+            glColor3f(1, 0, 0)
+            glBegin(GL_TRIANGLES)
+            glVertex3f(*p0)
+            glVertex3f(*p2)
+            glVertex3f(*p1)
+            glEnd()
+        else:
+            sx, sy, sz = self.size
 
-        glPushMatrix()
-        glTranslatef(*self.pos)
+            glDisable(GL_TEXTURE_2D)
+            glColor3f(*self.color_vec)
 
-        drawCylinder(
-            self.radius,
-            self.height,
-            30
-        )
+            glPushMatrix()
+            glTranslatef(*self.pos)
 
-        glPopMatrix()
+            drawCylinder(
+                self.radius,
+                self.height,
+                30
+            )
+
+            glPopMatrix()
 
     def step(self, delta_time):
         pass
